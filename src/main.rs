@@ -7,33 +7,46 @@ use click_object::{Control,LabelFrame,Attachable};
 
 use std::path::PathBuf;
 
-use gtk::{Button, WindowType, Image,Orientation,Box,ScrolledWindow,Paned,FileChooserDialog,DialogExt,FileChooserAction,ResponseType,Window};
+use gtk::{Button, WindowType, Image,Orientation,Box,ScrolledWindow,Paned,FileChooserDialog,DialogExt,FileChooserAction,ResponseType,Window,Dialog,TextView,ContainerExt,DialogFlags,WrapMode,Bin};
 
 fn main() {
     if gtk::init().is_err() {
         println!("Failed to initialize GTK.");
         return;
     }
-//Select file to open
-	 let chooser_window=Window::new(WindowType::Toplevel);
-	 let chooser=FileChooserDialog::new::<Window>(Some("Open Video"),Some(&chooser_window),FileChooserAction::Open);
-	 chooser.add_button("Open",ResponseType::Ok.into());
-	 chooser.add_button("Cancel",ResponseType::Cancel.into());
-	 let filename:PathBuf;
-	 let response_code=chooser.run();
-		if response_code==ResponseType::Ok.into(){
-				//We've got a file, let's open it
-				 filename=chooser.get_filename().unwrap();
-				 chooser.destroy();
-		}else if response_code == ResponseType::Cancel.into(){
-		      	 //if they don't want to open a file, what are we doing
-				     println!("No file, no clickbait");
-				     return;
-			} else {
-			//eeek
-		     println!("Unknown signal from open dialog");
-		     return;
-		}
+    //Choose labels
+    let label_dialog_window=Window::new(WindowType::Toplevel);
+    
+    let label_dialog = Dialog::new_with_buttons(Some("Define Labels"),Some(&label_dialog_window),DialogFlags::empty(),&[("Done",ResponseType::Ok.into()),("Cancel",ResponseType::Cancel.into())]);
+    let label_text = TextView::new();
+    label_text.set_wrap_mode(WrapMode::Word);
+    label_text.get_buffer().unwrap().set_text("hi");
+    let label_scroll = ScrolledWindow::new(None,None);
+    label_scroll.add(&label_text);
+    label_dialog.get_content_area().add(&label_scroll);  
+    label_scroll.show_all();
+    let label_response=label_dialog.run();
+    
+    //Select file to open
+    let chooser_window=Window::new(WindowType::Toplevel);
+    let chooser=FileChooserDialog::new::<Window>(Some("Open Video"),Some(&chooser_window),FileChooserAction::Open);
+    chooser.add_button("Open",ResponseType::Ok.into());
+    chooser.add_button("Cancel",ResponseType::Cancel.into());
+    let filename:PathBuf;
+    let response_code=chooser.run();
+    if response_code==ResponseType::Ok.into(){
+	//We've got a file, let's open it
+	filename=chooser.get_filename().unwrap();
+	chooser.destroy();
+    }else if response_code == ResponseType::Cancel.into(){
+	//if they don't want to open a file, what are we doing
+	println!("No file, no clickbait");
+	return;
+    } else {
+	//eeek
+	println!("Unknown signal from open dialog");
+	return;
+    }
 
 
     let window = Window::new(WindowType::Toplevel);
