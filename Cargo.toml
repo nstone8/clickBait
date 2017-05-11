@@ -5,3 +5,4 @@ authors = ["Nick Stone <stone.nicholas@gmail.com>"]
 
 [dependencies]
 gtk = "0.1.2"
+regex = "*"

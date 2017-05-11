@@ -1,9 +1,9 @@
 extern crate gtk;
-use gtk::{ScrolledWindow,ContainerExt,Box,Orientation,Entry,Paned,Button,EntryExt,Frame};
+use gtk::{ScrolledWindow,ContainerExt,Box,Orientation,Entry,EntryExt,Frame};
 use std::vec::Vec;
 
 pub trait Attachable{
-    fn attach<F:ContainerExt>(self,parent: &F);
+    fn attach<F:ContainerExt>(&self,parent: &F);
 }
 
 pub struct Control {}
@@ -30,51 +30,43 @@ impl Copy for Control {}
 
 pub struct LabelFrame {
     label_box:Box,
-    label_pane:Paned,
     labels:Vec<Label>
 }
 impl LabelFrame{
 
-    pub fn new()->LabelFrame{
-        let pane=Paned::new(Orientation::Vertical);
+    pub fn new(labels:Vec<Label>)->LabelFrame{
         let label_box=Box::new(Orientation::Vertical,0);
-        let test_label=Label::new();
-        test_label.attach(&label_box);
-        pane.add(&label_box);
-        let add_button=Button::new_with_label("+");
-        pane.add(&add_button);
-        LabelFrame{label_box: label_box,label_pane:pane,labels:Vec::new()}
+        //Add labels here
+        for label in &labels{
+            label.attach(&label_box)
+        }
+        LabelFrame{label_box: label_box,labels:labels}
     }
 }
 impl Attachable for LabelFrame{
-    fn attach<F:ContainerExt>(self,parent: &F){
+    fn attach<F:ContainerExt>(&self,parent: &F){
         let scroll=ScrolledWindow::new(None,None);
-        scroll.add(&self.label_pane);
+        scroll.add(&self.label_box);
         parent.add(&scroll);
     }
 }
 
-
-struct Label{
-    key:Entry,
+pub struct Label{
+    key:String,
     value:Entry
 }
 impl Label{
-    fn new()->Label{
-        let k = Entry::new();
+    pub fn new(label:&str)->Label{
+        let k = String::from(label);
         let v = Entry::new();
-        k.set_text("Label");
-        v.set_text("Value");
+        v.set_text("0");
         Label{key:k,value:v}
     }
 }
 impl Attachable for Label{
-    fn attach<F:ContainerExt>(self,parent: &F){
-        let f=Frame::new(None);
-        let b=Box::new(Orientation::Vertical,0);
-        b.add(&self.key);
-        b.add(&self.value);
-        f.add(&b);
+    fn attach<F:ContainerExt>(&self,parent: &F){
+        let f=Frame::new(Some(self.key.as_str()));
+        f.add(&self.value);
         parent.add(&f);
     }
 }

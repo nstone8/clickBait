@@ -1,13 +1,16 @@
 extern crate gtk;
+extern crate regex;
 
 use gtk::prelude::*;
 
 mod click_object;
-use click_object::{Control,LabelFrame,Attachable};
+use click_object::{Control,LabelFrame,Attachable,Label};
 
 use std::path::PathBuf;
 
-use gtk::{Button, WindowType, Image,Orientation,Box,ScrolledWindow,Paned,FileChooserDialog,DialogExt,FileChooserAction,ResponseType,Window,Dialog,TextView,ContainerExt,DialogFlags,WrapMode,Bin};
+use regex::Regex;
+
+use gtk::{Button, WindowType, Image,Orientation,Box,ScrolledWindow,Paned,FileChooserDialog,DialogExt,FileChooserAction,ResponseType,Window,Dialog,TextView,ContainerExt,DialogFlags,WrapMode};
 
 fn main() {
     if gtk::init().is_err() {
@@ -18,15 +21,41 @@ fn main() {
     let label_dialog_window=Window::new(WindowType::Toplevel);
     
     let label_dialog = Dialog::new_with_buttons(Some("Define Labels"),Some(&label_dialog_window),DialogFlags::empty(),&[("Done",ResponseType::Ok.into()),("Cancel",ResponseType::Cancel.into())]);
+    let instructions=gtk::Label::new(Some("Enter label names separated by commas. All whitespace will be ignored."));
     let label_text = TextView::new();
     label_text.set_wrap_mode(WrapMode::Word);
-    label_text.get_buffer().unwrap().set_text("hi");
     let label_scroll = ScrolledWindow::new(None,None);
     label_scroll.add(&label_text);
-    label_dialog.get_content_area().add(&label_scroll);  
+    label_dialog.get_content_area().add(&instructions);  
+    label_dialog.get_content_area().add(&label_scroll);
+    instructions.show();
     label_scroll.show_all();
     let label_response=label_dialog.run();
-    
+    let label_vec_option:Option<Vec<Label>>;
+    if label_response==ResponseType::Ok.into(){
+    let label_str:String;
+        match label_text.get_buffer().unwrap().get_bounds(){
+            (begin,end) => label_str = label_text.get_buffer().unwrap().get_text(&begin,&end,false).unwrap()
+        }
+        println!("Entered Text:{}",label_str);
+        let label_match=Regex::new(r"(.*?)(,|$)").unwrap();
+        let label_iter=label_match.captures_iter(label_str.trim());
+        let mut label_vec: Vec<Label> = Vec::new();
+        for label in label_iter{
+            let l=label.iter().nth(1).unwrap().unwrap().as_str().trim();
+            println!("label: {}",l);
+            label_vec.push(Label::new(l));
+        }
+        if label_vec.len()==0{
+            label_vec_option=None;
+        }else{
+            label_vec_option=Some(label_vec);
+        }
+    }else{
+        println!("No labels");
+        label_vec_option=None;
+    }
+    label_dialog.destroy();
     //Select file to open
     let chooser_window=Window::new(WindowType::Toplevel);
     let chooser=FileChooserDialog::new::<Window>(Some("Open Video"),Some(&chooser_window),FileChooserAction::Open);
@@ -69,8 +98,10 @@ fn main() {
     my_box.add(&image_scroll);
     my_box.add(&play_box);
     top_box.add(&my_box);
-    let labels=LabelFrame::new();
-    labels.attach(&top_box);
+    if let Some(all_labels)=label_vec_option{
+        let labels=LabelFrame::new(all_labels);
+        labels.attach(&top_box);
+    }
     window.add(&top_box);
     window.show_all();
 
